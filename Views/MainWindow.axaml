@@ -1,0 +1,156 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:OilDrillingSimulationApp.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:conv="using:OilDrillingSimulationApp.Converters"
+        mc:Ignorable="d"
+        Width="800"
+        Height="600"
+        x:Class="OilDrillingSimulationApp.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Oil Drilling Simulation App"
+        Background="#FF2D0A4A">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Window.Resources>
+        <conv:BoolToBrushConverter x:Key="BoolToBrushConverter"/>
+        <conv:ObjectIsNotNullConverter x:Key="ObjectIsNotNullConverter"/>
+    </Window.Resources>
+    
+    <Window.Styles>
+        <Style Selector="Button">
+            <Setter Property="Background" Value="#FF7B2CBF"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#FF5A189A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="10,5"/>
+        </Style>
+        
+        <Style Selector="Button:pointerover">
+            <Setter Property="Background" Value="#FF9D4EDD"/>
+        </Style>
+        
+        <Style Selector="ListBox">
+            <Setter Property="Background" Value="#FF3C096C"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#FF5A189A"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        </Style>
+        
+        <Style Selector="Border">
+            <Setter Property="Background" Value="#FF3C096C"/>
+            <Setter Property="BorderBrush" Value="#FF5A189A"/>
+        </Style>
+        
+        <Style Selector="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+    </Window.Styles>
+
+    <DockPanel>
+        <!-- Панель управления -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5" Spacing="10" Background="#FF3C096C">
+            <Button Content="Add Oil Rig" Command="{Binding AddOilRigCommand}" Width="120"/>
+            <Button Content="Remove Selected" Command="{Binding RemoveOilRigCommand}" Width="120"
+                    IsEnabled="{Binding SelectedOilRig, Converter={StaticResource ObjectIsNotNullConverter}}"/>
+        </StackPanel>
+
+        <!-- Основное содержимое -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Список нефтяных вышек -->
+            <ListBox Grid.Column="0" ItemsSource="{Binding OilRigs}" SelectedItem="{Binding SelectedOilRig}"
+                     Margin="5" Background="#FF3C096C">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="5">
+                            <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14"/>
+                            <TextBlock Text="{Binding Status}" 
+                                     Foreground="{Binding IsOnFire, Converter={StaticResource BoolToBrushConverter}, 
+                                     ConverterParameter='#FFE5383B;#FF38B000'}"/>
+                            <TextBlock Text="{Binding TotalBarrelsAmount, StringFormat='Total Barrels: {0}'}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- Детали выбранной вышки -->
+            <Grid Grid.Column="1" Margin="5" 
+                  IsVisible="{Binding SelectedOilRig, Converter={StaticResource ObjectIsNotNullConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Информация о вышке -->
+                <Border Grid.Row="0" 
+                        Background="{Binding SelectedOilRig.IsOnFire, Converter={StaticResource BoolToBrushConverter}, 
+                        ConverterParameter='#FFE5383B;#FF3C096C'}"
+                        CornerRadius="5" Margin="0,0,0,5" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="{Binding SelectedOilRig.Name}" FontSize="18" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding SelectedOilRig.Status}"/>
+                        <TextBlock Text="{Binding SelectedOilRig.LastEvent}" FontStyle="Italic"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Список баррелей нефти и механиков -->
+                <TabControl Grid.Row="1" Margin="0,0,0,5" BorderBrush="#FF5A189A" BorderThickness="1" CornerRadius="5">
+                    <TabItem Header="Oil Barrels" Foreground="White" FontSize="18" FontWeight="Bold">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ListBox ItemsSource="{Binding SelectedOilRig.Barrels}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Amount, StringFormat='{}Barrels: {0}'}"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+                    </TabItem>
+                    <TabItem Header="Mechanics" Foreground="White" FontSize="18" FontWeight="Bold">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ListBox ItemsSource="{Binding SelectedOilRig.Mechanics}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                            <TextBlock Text="{Binding Status}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+                    </TabItem>
+                </TabControl>
+
+                <!-- Журнал событий -->
+                <Border Grid.Row="2" BorderBrush="#FF5A189A" BorderThickness="1" CornerRadius="5">
+                    <StackPanel>
+                        <TextBlock Text="Event Log" FontWeight="Bold" Margin="5"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <ListBox ItemsSource="{Binding SelectedOilRig.EventLog}">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding}" TextWrapping="Wrap"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </DockPanel>
+</Window>
